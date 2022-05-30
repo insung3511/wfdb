@@ -1,5 +1,5 @@
 /* file: xform.c	G. Moody        8 December 1983
-			Last revised:    24 April 2020
+			Last revised:     18 May 2022
 -------------------------------------------------------------------------------
 xform: Sampling frequency, amplitude, and format conversion for WFDB records
 Copyright (C) 1983-2010 George B. Moody
@@ -412,10 +412,18 @@ char *argv[];
 	  "   24   24-bit two's complement amplitudes (LSB first)\n");
 	    (void)fprintf(stderr,
 	  "   32   32-bit two's complement amplitudes (LSB first)\n");
+#ifdef WFDB_FLAC_SUPPORT
+	    fprintf(stderr,
+		"  508  8-bit amplitudes with FLAC compression\n");
+	    fprintf(stderr,
+		"  516  16-bit amplitudes with FLAC compression\n");
+	    fprintf(stderr,
+		"  524  24-bit amplitudes with FLAC compression\n");
+#endif
 	    do {
 		format = dfin[0].fmt;
 		(void)fprintf(stderr,
-		 "Choose an output format (8/16/61/80/160/212/310/311/24/32) [%d]: ",
+		 "Choose an output format from the list above [%d]: ",
 			      format);
 		script_fgets(answer, sizeof(answer), ttyin);
 		(void)sscanf(answer, "%d", &format);
@@ -493,6 +501,7 @@ char *argv[];
 		if (i > 0) dfout[i].adcres = dfout[i-1].adcres;
 		switch (dfout[i].fmt) {
 		  case 80:
+		  case 508:
 		    dfout[i].adcres = 8;
 		    break;
 		  case 212:
@@ -504,6 +513,7 @@ char *argv[];
 			dfout[i].adcres = 10;
 		    break;
 		  case 24:
+		  case 524:
 		    if (dfout[i].adcres < 8 || dfout[i].adcres > 24)
 			dfout[i].adcres = 24;
 		    break;
@@ -511,6 +521,10 @@ char *argv[];
 		    if (dfout[i].adcres < 8 || dfout[i].adcres > 32)
 			dfout[i].adcres = 32;
 		    break;
+		  case 16:
+		  case 61:
+		  case 160:
+		  case 516:
 		  default:
 		    if (dfout[i].adcres < 8 || dfout[i].adcres > 16)
 			dfout[i].adcres = WFDB_DEFRES;
@@ -693,6 +707,7 @@ char *argv[];
 					   assume a suitable default */
 		switch (dfin[j].fmt) {
 		  case 80:
+		  case 508:
 		    dfin[j].adcres = 8;
 		    break;
 		  case 212:
@@ -702,12 +717,21 @@ char *argv[];
 		    dfin[j].adcres = 10;
 		    break;
 		  case 24:
+		  case 524:
 		    dfin[j].adcres = 24;
 		    break;
 		  case 32:
 		    dfin[j].adcres = 32;
 		    break;
+		  case 16:
+		  case 61:
+		  case 160:
+		  case 516:
 		  default:
+		    /* for historical compatibility, 16-bit formats
+		       assume a resolution of WFDB_DEFRES, although it
+		       would make more sense to assume a resolution of
+		       16 here */
 		    dfin[j].adcres = WFDB_DEFRES;
 		    break;
 		}
